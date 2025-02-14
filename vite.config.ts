@@ -3,5 +3,10 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [sveltekit()],
-	base: '/BlogSvelte-Supabase/'
+	base: '/BlogSvelte-Supabase/',
+	server: {
+		fs: {
+			strict: false
+		}
+	}
 });
