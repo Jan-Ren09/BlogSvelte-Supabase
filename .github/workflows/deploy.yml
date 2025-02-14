@@ -37,7 +37,7 @@ jobs:
 
       - name: Build site
         env:
-          BASE_PATH: '/BlogSvelte-Supabase'
+          BASE_PATH: '/${{ github.event.repository.name }}'
         run: pnpm run build
 
       - name: Upload Artifacts
