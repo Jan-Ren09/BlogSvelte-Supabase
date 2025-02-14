@@ -40,11 +40,6 @@ jobs:
           BASE_PATH: '/BlogSvelte-Supabase'
         run: pnpm run build
 
-      - name: Debug Environment
-        run: |
-          echo "Build directory contents:"
-          ls -la dist/
-
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v3
         with:
