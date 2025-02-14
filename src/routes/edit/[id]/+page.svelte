@@ -1,25 +1,20 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { supabase } from '$lib/supabase';
 	import { goto } from '$app/navigation';
 	import { onMount, onDestroy } from 'svelte';
-	import { writable } from 'svelte/store';
+	import { writable, get } from 'svelte/store';
 	import { currentUser } from '$lib/stores';
+	import type { Database } from '../../../../database.types';
 
-	interface Post {
-		id: string;
-		title: string;
-		content: string;
-		author_id: string;
-	}
+	type Posts = Database['public']['Tables']['posts']['Row'];
 
-	const post = writable<Post | null>(null);
+	const post = writable<Posts | null>(null);
 	const error = writable<string | null>(null);
-	let loading = writable<boolean>(true);
-	let subscription;
+	const loading = writable<boolean>(true);
+	let subscription: any;
 	let user = null;
 
-	// 🟢 Get current user
 	onMount(() => {
 		const unsubscribe = currentUser.subscribe((value) => {
 			user = value;
@@ -27,24 +22,19 @@
 		return () => unsubscribe();
 	});
 
-	// 🟡 Load post data
-	async function loadPost(postId: string) {
-		console.log('🔄 Fetching post...', postId);
+	async function loadPost(postId: number) {
 		const { data, error: err } = await supabase.from('posts').select('*').eq('id', postId).single();
 
 		if (err) {
 			error.set(err.message);
-			console.error('❌ Fetch Error:', err);
 			return;
 		}
 
-		console.log('✅ Post Loaded:', data);
 		post.set(data);
 		loading.set(false);
 	}
 
-	// 🔄 Handle real-time updates
-	function subscribeToPost(postId: string) {
+	function subscribeToPost(postId: number) {
 		subscription = supabase
 			.channel(`post-${postId}`)
 			.on(
@@ -56,13 +46,9 @@
 					filter: `id=eq.${postId}`
 				},
 				async (payload) => {
-					console.log('🔔 Realtime update received:', payload);
-
 					if (payload.eventType === 'DELETE') {
-						console.log('🗑️ Post deleted, redirecting...');
 						await goto('/');
 					} else {
-						console.log('📝 Post updated, reloading...');
 						await loadPost(postId);
 					}
 				}
@@ -70,35 +56,22 @@
 			.subscribe();
 	}
 
-	// 🎯 Load post on mount
-	onMount(async () => {
-		console.log('🔧 Component mounted');
-
-		const unsubscribe = page.subscribe(async ($page) => {
-			const postId = $page.params.id;
-			if (postId) {
-				await loadPost(postId);
-				subscribeToPost(postId);
-			}
-		});
+	onMount(() => {
+		const postId = Number(page.params.id);
+		if (postId) {
+			loadPost(postId);
+			subscribeToPost(postId);
+		}
 
 		return () => {
-			unsubscribe();
+			if (subscription) {
+				supabase.removeChannel(subscription);
+			}
 		};
 	});
 
-	// 🧹 Cleanup subscription
-	onDestroy(() => {
-		console.log('🧹 Cleaning up subscription');
-		if (subscription) {
-			supabase.removeChannel(subscription);
-		}
-	});
-
-	// ✏️ Handle post update
 	async function handleSubmit() {
-		let $post;
-		post.subscribe((value) => ($post = value))();
+		const $post = get(post);
 
 		if (!$post) return;
 
@@ -109,40 +82,31 @@
 					title: $post.title,
 					content: $post.content
 				})
-				.eq('id', $post.id); // Remove .eq('author_id', user.id) since policy handles auth
+				.eq('id', $post.id);
 
 			if (err) throw err;
-			console.log('✅ Update successful');
 			await goto('/');
-		} catch (err) {
+		} catch (err: any) {
 			error.set(err.message);
-			console.error('❌ Update Error:', err);
 		}
 	}
-	// 🗑️ Handle delete post
+
 	async function handleDelete() {
-		const postValue = get(post); // Get current post value
+		const $post = get(post);
 
 		if (!confirm('🚨 Are you sure you want to delete this post?')) return;
 
-		const { data, error: err } = await supabase
-			.from('posts')
-			.delete()
-			.match({ id: postValue?.id })
-			.select();
+		const { error: err } = await supabase.from('posts').delete().eq('id', Number($post?.id));
 
 		if (err) {
 			error.set(err.message);
 			return;
 		}
 
-		if (data?.length) {
-			await goto('/');
-		}
+		await goto('/');
 	}
 </script>
 
-<!-- UI -->
 <div class="mx-auto max-w-3xl">
 	<h1 class="mb-6 text-2xl font-bold">Edit Blog Post</h1>
 
@@ -176,17 +140,20 @@
 				<p class="text-red-500">{$error}</p>
 			{/if}
 
-			<div class="flex space-x-4">
-				<button type="submit" class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
-					Update
-				</button>
-				<button
-					type="button"
-					on:click={handleDelete}
-					class="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-				>
-					Delete
-				</button>
+			<div class="flex flex-row justify-between">
+				<div>
+					<button
+						type="button"
+						on:click={handleDelete}
+						class="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
+					>
+						Delete
+					</button>
+					<button type="submit" class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600">
+						Update
+					</button>
+				</div>
+				<a href="/" type="button" class="rounded bg-black px-4 py-2 text-white"> Cancel </a>
 			</div>
 		</form>
 	{/if}

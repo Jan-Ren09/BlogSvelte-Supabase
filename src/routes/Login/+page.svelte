@@ -13,14 +13,11 @@
 				password: password.trim()
 			});
 			if (err) {
-				console.error('Supabase error:', err);
 				throw err;
 			}
-			console.log('Login successful:', data);
 			goto('/');
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'An unexpected error occurred';
-			console.error('Error during login:', error);
 		}
 	}
 </script>

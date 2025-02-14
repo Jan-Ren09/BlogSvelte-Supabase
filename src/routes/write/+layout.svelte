@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	let user = null;
+	let user: any;
 
 	onMount(() => {
 		const unsubscribe = currentUser.subscribe((value) => {

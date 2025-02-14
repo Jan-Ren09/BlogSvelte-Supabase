@@ -8,34 +8,23 @@
 	let content = '';
 	let loading = false;
 	let error: string | null = null;
-	let user = null;
+	let user: any;
 
-	// Ensure we have the authenticated user
 	onMount(() => {
 		const unsubscribe = currentUser.subscribe((value) => {
 			user = value;
-			console.log('Current User:', user);
 		});
 		return () => unsubscribe();
 	});
 
 	async function handleSubmit() {
-		console.log('Submitting form...');
 		if (!user) {
 			error = 'You must be logged in to create a blog post';
-			console.error(error);
 			return;
 		}
 
 		try {
 			loading = true;
-
-			console.log('Inserting into blogs table:', {
-				title,
-				content,
-				author_email: user.email,
-				author_id: user.id
-			});
 
 			const { data, error: err } = await supabase.from('posts').insert([
 				{
@@ -46,10 +35,7 @@
 				}
 			]);
 
-			console.log('Supabase response:', { data, err });
-
 			if (err) {
-				console.error('Supabase error:', err);
 				throw err;
 			}
 
@@ -57,7 +43,6 @@
 		} catch (err) {
 			if (err instanceof Error) {
 				error = err.message;
-				console.error('Catch block error:', err);
 			}
 		} finally {
 			loading = false;
@@ -65,32 +50,32 @@
 	}
 </script>
 
-<div class="mx-auto max-w-2xl">
-	<h1 class="mb-6 text-3xl font-bold text-white">Write a Blog Post</h1>
+<div class="mx-auto max-w-2xl rounded-lg bg-white p-6 shadow-lg">
+	<h1 class="mb-6 text-xl font-bold">Write a Blog Post</h1>
 
 	<form on:submit|preventDefault={handleSubmit} class="space-y-6">
 		{#if error}
-			<div class="rounded bg-red-500 p-3 text-white">{error}</div>
+			<div class="rounded border border-red-400 bg-red-100 p-3 text-red-700">{error}</div>
 		{/if}
 
 		<div>
-			<label class="mb-2 block text-white" for="title">Title</label>
+			<label class="mb-2 block font-medium text-gray-700" for="title">Title</label>
 			<input
 				type="text"
 				id="title"
 				bind:value={title}
-				class="w-full rounded bg-gray-700 p-2 text-white"
+				class="w-full rounded border border-gray-300 p-2 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400"
 				required
 			/>
 		</div>
 
 		<div>
-			<label class="mb-2 block text-white" for="content">Content</label>
+			<label class="mb-2 block font-medium text-gray-700" for="content">Content</label>
 			<textarea
 				id="content"
 				bind:value={content}
 				rows="10"
-				class="w-full rounded bg-gray-700 p-2 text-white"
+				class="p-2shadow-sm w-full rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
 				required
 			></textarea>
 		</div>
@@ -98,7 +83,7 @@
 		<button
 			type="submit"
 			disabled={loading}
-			class="w-full rounded bg-red-600 p-3 text-white hover:bg-red-700 disabled:opacity-50"
+			class="w-full rounded bg-green-600 p-3 text-white shadow-md hover:bg-green-900 disabled:opacity-50"
 		>
 			{loading ? 'Publishing...' : 'Publish'}
 		</button>

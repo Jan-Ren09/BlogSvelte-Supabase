@@ -15,20 +15,16 @@
 			return;
 		}
 
-		console.log('Registering with email:', trimmedEmail); // Debugging log
-
 		const { data, error: err } = await supabase.auth.signUp({
 			email: trimmedEmail,
 			password
 		});
 
 		if (err) {
-			console.error('Supabase error:', err); // Log full error
-			error = err.message; // Show error message in UI
+			error = err.message;
 			return;
 		}
 
-		console.log('User registered:', data);
 		goto('/Login');
 	}
 </script>

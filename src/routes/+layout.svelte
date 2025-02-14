@@ -3,16 +3,55 @@
 	import { supabase } from '$lib/supabase';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { writable } from 'svelte/store';
+	import type { User } from '$lib/types';
 
-	let user = null;
+	export const user = writable<User | null>(null);
 
-	onMount(() => {
-		supabase.auth.getSession().then(({ data: { session } }) => {
-			user = session?.user ?? null;
-		});
+	onMount(async () => {
+		const {
+			data: { session }
+		} = await supabase.auth.getSession();
+		if (session?.user) {
+			const formattedUser: User = {
+				id: session.user.id,
+				email: session.user.email ?? '',
+				role: session.user.role ?? '',
+				aud: '',
+				email_confirmed_at: '',
+				phone: '',
+				confirmation_sent_at: '',
+				confirmed_at: '',
+				last_sign_in_at: '',
+				created_at: '',
+				updated_at: '',
+				is_anonymous: false
+			};
+			user.set(formattedUser);
+		} else {
+			user.set(null);
+		}
 
 		supabase.auth.onAuthStateChange((_event, session) => {
-			user = session?.user ?? null;
+			if (session?.user) {
+				const formattedUser: User = {
+					id: session.user.id,
+					email: session.user.email ?? '',
+					role: session.user.role ?? '',
+					aud: '',
+					email_confirmed_at: '',
+					phone: '',
+					confirmation_sent_at: '',
+					confirmed_at: '',
+					last_sign_in_at: '',
+					created_at: '',
+					updated_at: '',
+					is_anonymous: false
+				};
+				user.set(formattedUser);
+			} else {
+				user.set(null);
+			}
 		});
 	});
 
@@ -28,7 +67,7 @@
 			<div class="flex h-16 items-center justify-between">
 				<a href="/" class="text-xl font-bold">Blog</a>
 				<div class="flex items-center space-x-4">
-					{#if user}
+					{#if $user}
 						<a href="/write" class="text-gray-700 hover:text-gray-900">Write</a>
 						<button on:click={signOut} class="text-gray-700 hover:text-gray-900">Sign Out</button>
 					{:else}
@@ -40,6 +79,6 @@
 		</div>
 	</nav>
 	<main class="mx-auto max-w-6xl px-4 py-8">
-		<slot />
+		<slot user={$user} />
 	</main>
 </div>

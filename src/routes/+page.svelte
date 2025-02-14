@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { supabase } from '$lib/supabase';
-	import { onMount } from 'svelte';
+	import type { Database } from '../../database.types';
+	import { writable } from 'svelte/store';
+	import { currentUser } from '$lib/stores';
 
-	let posts = [];
+	type Posts = Database['public']['Tables']['posts']['Row'];
+
+	let posts: Posts[];
 	let currentPage = 1;
 	let totalPages = 1;
-	const postsPerPage = 10;
+	const postsPerPage = 5;
 	let loading = true;
 	let error = '';
+	const expanded = writable<{ [key: string]: boolean }>({});
 
 	async function fetchPosts() {
 		try {
@@ -28,8 +33,8 @@
 			if (err) throw err;
 
 			posts = data;
-			totalPages = Math.ceil(count / postsPerPage);
-		} catch (err) {
+			totalPages = count !== null ? Math.ceil(count / postsPerPage) : 1;
+		} catch (err: any) {
 			error = err.message;
 		} finally {
 			loading = false;
@@ -45,6 +50,17 @@
 	function formatDate(dateString: string) {
 		return new Date(dateString).toLocaleDateString();
 	}
+
+	function truncate(title: string, maxLength = 20) {
+		return title.length > maxLength ? title.slice(0, maxLength) + '...' : title;
+	}
+
+	function toggleExpand(postId: number) {
+		expanded.update((state) => ({
+			...state,
+			[postId]: !state[postId]
+		}));
+	}
 </script>
 
 <div class="space-y-6">
@@ -59,11 +75,43 @@
 	{:else}
 		{#each posts as post}
 			<article class="rounded-lg bg-white p-6 shadow">
-				<h2 class="mb-2 text-xl font-bold">
-					<a href="/edit/{post.id}" class="hover:text-blue-600">{post.title}</a>
+				<p class="flex justify-end text-xs text-gray-600">{formatDate(post.created_at)}</p>
+
+				<h2 class="font-semibold">
+					<div title={post.title}>
+						{#if $expanded[post.id]}
+							{post.title}
+						{:else}
+							{truncate(post.title, 30)}
+						{/if}
+					</div>
 				</h2>
-				<p class="mb-4 text-gray-600">{formatDate(post.created_at)}</p>
-				<p class="text-gray-800">{post.content.substring(0, 200)}...</p>
+
+				<p class="text-gray-800">
+					{#if $expanded[post.id]}
+						{post.content}
+					{:else}
+						{truncate(post.content, 100)}
+					{/if}
+				</p>
+
+				<div class="flex justify-between">
+					<button
+						on:click={() => toggleExpand(post.id)}
+						class="mt-2 text-xs text-blue-600 hover:underline"
+					>
+						{#if $expanded[post.id]}
+							See Less
+						{:else}
+							See Full
+						{/if}
+					</button>
+					{#if post.author_email === $currentUser?.email}
+						<a href={`/edit/${post.id}`} class="mt-2 text-xs text-green-600 hover:underline">
+							Edit / Delete
+						</a>
+					{/if}
+				</div>
 			</article>
 		{/each}
 
