@@ -16,7 +16,7 @@ const config = {
 		paths: {
 			base: dev ? '' : '/BlogSvelte-Supabase'
 		},
-		prerender: { entries: [] }
+		prerender: { entries: [], concurrency: 5 }
 	}
 };
 
