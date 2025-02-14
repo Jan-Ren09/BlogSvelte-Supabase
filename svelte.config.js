@@ -13,7 +13,7 @@ const config = {
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter({ fallback: 'index.html' }),
 		paths: {
-			base: dev ? '/BlogSvelte-Supabase' : ''
+			base: 'production' ? '/BlogSvelte-Supabase' : ''
 		},
 		prerender: { entries: [] }
 	}
