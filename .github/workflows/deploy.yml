@@ -17,12 +17,14 @@ jobs:
     environment: github-pages
     env:
       VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         env:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
@@ -40,7 +42,6 @@ jobs:
 
       - name: Debug Environment
         run: |
-          echo "VITE_SUPABASE_ANON_KEY exists: ${{ secrets.VITE_SUPABASE_ANON_KEY != '' }}"
           echo "Build directory contents:"
           ls -la build/
 
@@ -64,6 +65,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     env:
       VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
 
     steps:
       - name: Deploy
